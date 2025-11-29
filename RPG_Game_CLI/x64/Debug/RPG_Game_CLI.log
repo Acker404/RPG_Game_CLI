@@ -1,0 +1,5 @@
+﻿  AccountSystem.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\filesystem(12): warning STL4038: The contents of <filesystem> are available only with C++17 or later.
+  RPG_Game_CLI.cpp
+  正在產生程式碼...
+  RPG_Game_CLI.vcxproj -> C:\Users\mark9\Desktop\RPG_Game_CLI\RPG_Game_CLI\x64\Debug\RPG_Game_CLI.exe

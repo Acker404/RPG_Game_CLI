@@ -1,20 +1,63 @@
-﻿// RPG_Game_CLI.cpp : 此檔案包含 'main' 函式。程式會於該處開始執行及結束執行。
-//
+﻿#include <iostream>
+#include "AccountSystem.h"
 
-#include <iostream>
+using namespace std;
 
-int main()
-{
-    std::cout << "Hello World!!\n";
+int main() {
+
+    AccountSystem accountSys;
+    int choice;
+
+    while (true) {
+        if (!accountSys.getLoginStatus()) {
+            // === 未登入狀態選單 ===
+            cout << "\n========================\n";
+            cout << "   RPG 遊戲 - 登入系統   \n";
+            cout << "========================\n";
+            cout << "1. 登入 (Login)\n";
+            cout << "2. 註冊 (Register)\n";
+            cout << "3. 離開 (Exit)\n";
+            cout << "請選擇: ";
+            cin >> choice;
+
+            switch (choice) {
+            case 1:
+                accountSys.login();
+                break;
+            case 2:
+                accountSys.registerUser();
+                break;
+            case 3:
+                return 0;
+            default:
+                cout << "無效輸入。\n";
+            }
+        }
+        else {
+            // === 已登入狀態 (未來這裡是遊戲主選單) ===
+            cout << "\n========================\n";
+            cout << "   " << accountSys.getCurrentUser() << " 的遊戲大廳\n";
+            cout << "========================\n";
+            cout << "1. 開始遊戲 (Start Game) - [開發中]\n";
+            cout << "2. 角色管理 (Character) - [開發中]\n";
+            cout << "3. 登出 (Logout)\n";
+            cout << "請選擇: ";
+            cin >> choice;
+
+            switch (choice) {
+            case 1:
+                cout << "進入遊戲世界... (功能尚未實作)\n";
+                break;
+            case 2:
+                cout << "進入角色創建介面... (功能尚未實作)\n";
+                break;
+            case 3:
+                accountSys.logout();
+                break;
+            default:
+                cout << "無效輸入。\n";
+            }
+        }
+    }
+    return 0;
 }
-
-// 執行程式: Ctrl + F5 或 [偵錯] > [啟動但不偵錯] 功能表
-// 偵錯程式: F5 或 [偵錯] > [啟動偵錯] 功能表
-
-// 開始使用的提示: 
-//   1. 使用 [方案總管] 視窗，新增/管理檔案
-//   2. 使用 [Team Explorer] 視窗，連線到原始檔控制
-//   3. 使用 [輸出] 視窗，參閱組建輸出與其他訊息
-//   4. 使用 [錯誤清單] 視窗，檢視錯誤
-//   5. 前往 [專案] > [新增項目]，建立新的程式碼檔案，或是前往 [專案] > [新增現有項目]，將現有程式碼檔案新增至專案
-//   6. 之後要再次開啟此專案時，請前往 [檔案] > [開啟] > [專案]，然後選取 .sln 檔案
