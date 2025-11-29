@@ -4,13 +4,16 @@
 #include "AccountSystem.h"
 #include "CharacterManager.h"
 #include "MapSystem.h" // 新增
-
+#include "BattleSystem.h" // 新增
 using namespace std;
 
 // 遊戲主迴圈
 void runGameLoop(Character* player, MapSystem& mapSys) {
     bool isRunning = true;
+    BattleSystem battleSys; // 建立戰鬥系統物件
 
+    // 設定隨機數種子 (讓每次怪物、戰鬥結果都不同)
+    srand(time(NULL));
     while (isRunning) {
         system("cls"); // 清空螢幕 (Windows 專用)
 
@@ -39,6 +42,35 @@ void runGameLoop(Character* player, MapSystem& mapSys) {
                 // 撞牆了，暫停一下讓玩家看到錯誤訊息
                 cout << "按任意鍵繼續...";
                 _getch();
+            }
+        }
+        if (mapSys.movePlayer(key)) {
+            // === 移動成功後，檢查是否遇怪 ===
+            NodeType currentType = mapSys.getCurrentNodeType();
+
+            if (currentType == WILD) {
+                // 野外：30% 機率遇怪
+                if (rand() % 100 < 30) {
+                    // 隨機產生怪物 (II.i 生成怪物)
+                    int rnd = rand() % 2;
+                    if (rnd == 0) {
+                        Monster m("長牙野豬", 1, 50, 8, 20, 10);
+                        battleSys.startBattle(player, m);
+                    }
+                    else {
+                        Monster m("灰狼", 2, 80, 12, 35, 20);
+                        battleSys.startBattle(player, m);
+                    }
+                }
+            }
+            else if (currentType == BOSS) {
+                // Boss 區：強制遇怪
+                Monster boss("地獄守門犬", 10, 500, 30, 500, 1000);
+                cout << "\n你感受到一股強大的殺氣...\n";
+                Sleep(1000);
+                battleSys.startBattle(player, boss);
+
+                // 打贏 Boss 可以直接獲勝或退回上一格 (這裡暫時不處理)
             }
         }
     }
