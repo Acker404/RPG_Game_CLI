@@ -5,8 +5,52 @@
 #include "CharacterManager.h"
 #include "MapSystem.h" // 新增
 #include "BattleSystem.h" // 新增
+#include "Item.h"
 using namespace std;
+// 在 main.cpp 上方加入
+#include "Item.h"
 
+void shopMenu(Character* player) {
+    while (true) {
+        system("cls");
+        cout << "\n=== 雜貨舖 ===\n";
+        cout << "老闆: 歡迎！今天想買點什麼？ (持有金錢: " << player->getMoney() << ")\n";
+        cout << "1. 小紅藥水 (HP+50)  - $20\n";
+        cout << "2. 小藍藥水 (MP+30)  - $30\n";
+        cout << "3. 鐵劍 (Atk+10)     - $100\n";
+        cout << "4. 離開商店\n";
+        cout << "請選擇: ";
+
+        int choice;
+        cin >> choice;
+
+        if (choice == 4) break;
+
+        Item* newItem = nullptr;
+
+        switch (choice) {
+        case 1:
+            if (player->spendMoney(20)) newItem = new Consumable("小紅藥水", 20, 50, false);
+            break;
+        case 2:
+            if (player->spendMoney(30)) newItem = new Consumable("小藍藥水", 30, 30, true);
+            break;
+        case 3:
+            if (player->spendMoney(100)) newItem = new Equipment("鐵劍", 100, WEAPON, 10);
+            break;
+        }
+
+        if (newItem != nullptr) {
+            player->addItem(newItem);
+            cout << "購買成功！\n";
+            system("pause");
+        }
+        else if (choice >= 1 && choice <= 3) {
+            cout << "金錢不足！\n";
+            system("pause");
+        }
+    }
+}
 // 遊戲主迴圈
 void runGameLoop(Character* player, MapSystem& mapSys) {
     bool isRunning = true;
@@ -14,6 +58,7 @@ void runGameLoop(Character* player, MapSystem& mapSys) {
 
     // 設定隨機數種子 (讓每次怪物、戰鬥結果都不同)
     srand(time(NULL));
+
     while (isRunning) {
         system("cls"); // 清空螢幕 (Windows 專用)
 
@@ -21,10 +66,39 @@ void runGameLoop(Character* player, MapSystem& mapSys) {
         player->showStats(); // 顯示角色狀態 (繼承自 Character)
         mapSys.displayMap(); // 顯示地圖
         mapSys.showCurrentInfo(); // 顯示當前位置資訊
+        // 在 runGameLoop 裡
 
+        cout << "[I] 背包 (Inventory)  [B] 商店/互動 (Buy)\n"; // 新增提示
+
+        char key = _getch();
+
+        if (key == 'i' || key == 'I') {
+            // === 打開背包 ===
+            system("cls");
+            player->showInventory();
+            cout << "\n輸入物品編號使用 (0 返回): ";
+            int idx;
+            cin >> idx;
+            if (idx > 0) {
+                player->useItem(idx - 1);
+                system("pause");
+            }
+        }
+        else if (key == 'b' || key == 'B') {
+            // === 商店互動 ===
+            // 只有在地圖節點是 SHOP 時才有效
+            if (mapSys.getCurrentNodeType() == SHOP) {
+                shopMenu(player);
+            }
+            else {
+                cout << "\n這裡沒有商店。\n";
+                system("pause"); // 讓玩家看到提示
+            }
+        }
+        // ... 原本的移動邏輯 ...
         // 2. 玩家輸入 (不需按 Enter)
         // _getch() 會回傳按下的鍵值
-        char key = _getch();
+        key = _getch();
 
         if (key == 'q' || key == 'Q') {
             // 離開遊戲

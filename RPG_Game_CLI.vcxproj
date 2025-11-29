@@ -126,6 +126,7 @@
     <ClCompile Include="AccountSystem.cpp" />
     <ClCompile Include="BattleSystem.cpp" />
     <ClCompile Include="CharacterManager.cpp" />
+    <ClCompile Include="Item.cpp" />
     <ClCompile Include="MapSystem.cpp" />
     <ClCompile Include="RPG_Game_CLI.cpp" />
   </ItemGroup>
@@ -134,6 +135,7 @@
     <ClInclude Include="BattleSystem.h" />
     <ClInclude Include="Character.h" />
     <ClInclude Include="CharacterManager.h" />
+    <ClInclude Include="Item.h" />
     <ClInclude Include="MapSystem.h" />
     <ClInclude Include="Monster.h" />
   </ItemGroup>

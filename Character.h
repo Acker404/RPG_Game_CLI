@@ -2,6 +2,8 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <vector>
+#include "Item.h"
 
 using namespace std;
 
@@ -11,16 +13,19 @@ protected:
     string username; // 所屬帳號
     string name;     // 角色名稱
     string job;      // 職業
+
     int level;
     int hp, maxHp;
     int mp, maxMp;
     int str; // 力量 (影響物理攻擊)
     int wis; // 智慧 (影響魔法攻擊)
     int exp;
+    int money;
+    vector<Item*> inventory; // 背包
 
 public:
     Character(string u, string n, string j, int lv)
-        : username(u), name(n), job(j), level(lv), exp(0) {
+        : username(u), name(n), job(j), level(lv), exp(0),money(100) {
     }
 
     virtual ~Character() {} // 虛擬解構子，確保子類別正確銷毀
@@ -91,6 +96,55 @@ public:
     // 或者重載一個無參數版本：
     virtual void useSkill() {
         cout << "使用了技能！" << endl;
+    }
+    // 金錢操作
+    int getMoney() const { return money; }
+    void addMoney(int amount) { money += amount; }
+    bool spendMoney(int amount) {
+        if (money >= amount) {
+            money -= amount;
+            return true;
+        }
+        return false;
+    }
+
+    // 恢復 (給藥水用)
+    void recover(int hpAmount, int mpAmount) {
+        hp += hpAmount;
+        if (hp > maxHp) hp = maxHp;
+        mp += mpAmount;
+        if (mp > maxMp) mp = maxMp;
+    }
+
+    // 背包操作
+    void addItem(Item* item) {
+        inventory.push_back(item);
+    }
+
+    void showInventory() {
+        cout << "\n=== 背包清單 (金錢: " << money << ") ===\n";
+        if (inventory.empty()) {
+            cout << "背包是空的。\n";
+            return;
+        }
+        for (int i = 0; i < inventory.size(); i++) {
+            cout << (i + 1) << ". ";
+            inventory[i]->showInfo();
+            cout << endl;
+        }
+    }
+
+    // 使用道具
+    void useItem(int index) {
+        if (index < 0 || index >= inventory.size()) return;
+
+        Item* item = inventory[index];
+        // 呼叫 Item 的虛擬函式 use
+        if (item->use(this)) {
+            // 如果回傳 true，代表是消耗品，要從背包移除
+            inventory.erase(inventory.begin() + index);
+            delete item; // 釋放記憶體
+        }
     }
 };
 
