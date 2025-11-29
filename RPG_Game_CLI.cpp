@@ -1,61 +1,85 @@
 ﻿#include <iostream>
+#include <clocale>
+#include <conio.h> // 重要：用於偵測鍵盤輸入 (_getch)
 #include "AccountSystem.h"
+#include "CharacterManager.h"
+#include "MapSystem.h" // 新增
 
 using namespace std;
 
+// 遊戲主迴圈
+void runGameLoop(Character* player, MapSystem& mapSys) {
+    bool isRunning = true;
+
+    while (isRunning) {
+        system("cls"); // 清空螢幕 (Windows 專用)
+
+        // 1. 顯示介面
+        player->showStats(); // 顯示角色狀態 (繼承自 Character)
+        mapSys.displayMap(); // 顯示地圖
+        mapSys.showCurrentInfo(); // 顯示當前位置資訊
+
+        // 2. 玩家輸入 (不需按 Enter)
+        // _getch() 會回傳按下的鍵值
+        char key = _getch();
+
+        if (key == 'q' || key == 'Q') {
+            // 離開遊戲
+            break;
+        }
+        else if (key == 'w' || key == 's' || key == 'a' || key == 'd' ||
+            key == 'W' || key == 'S' || key == 'A' || key == 'D') {
+
+            // 3. 移動邏輯
+            if (mapSys.movePlayer(key)) {
+                // 移動成功後，可以在這裡判斷是否遇怪 (下個階段做)
+                // if (mapSys.getCurrentNodeType() == WILD) { ... }
+            }
+            else {
+                // 撞牆了，暫停一下讓玩家看到錯誤訊息
+                cout << "按任意鍵繼續...";
+                _getch();
+            }
+        }
+    }
+}
+
 int main() {
+    setlocale(LC_ALL, "");
 
     AccountSystem accountSys;
+    CharacterManager charMgr;
+    // MapSystem 在進入遊戲後再建立，或者在這裡建立
+
     int choice;
 
     while (true) {
+        // ... (這部分保持不變：登入邏輯) ...
         if (!accountSys.getLoginStatus()) {
-            // === 未登入狀態選單 ===
-            cout << "\n========================\n";
-            cout << "   RPG 遊戲 - 登入系統   \n";
-            cout << "========================\n";
-            cout << "1. 登入 (Login)\n";
-            cout << "2. 註冊 (Register)\n";
-            cout << "3. 離開 (Exit)\n";
-            cout << "請選擇: ";
+            cout << "\n=== 系統登入 ===\n1. 登入\n2. 註冊\n3. 離開\n請選擇: ";
             cin >> choice;
-
-            switch (choice) {
-            case 1:
-                accountSys.login();
-                break;
-            case 2:
-                accountSys.registerUser();
-                break;
-            case 3:
-                return 0;
-            default:
-                cout << "無效輸入。\n";
-            }
+            if (choice == 1) accountSys.login();
+            else if (choice == 2) accountSys.registerUser();
+            else if (choice == 3) return 0;
         }
         else {
-            // === 已登入狀態 (未來這裡是遊戲主選單) ===
-            cout << "\n========================\n";
-            cout << "   " << accountSys.getCurrentUser() << " 的遊戲大廳\n";
-            cout << "========================\n";
-            cout << "1. 開始遊戲 (Start Game) - [開發中]\n";
-            cout << "2. 角色管理 (Character) - [開發中]\n";
-            cout << "3. 登出 (Logout)\n";
-            cout << "請選擇: ";
-            cin >> choice;
+            string currentUser = accountSys.getCurrentUser();
+            Character* selectedChar = charMgr.selectCharacterMenu(currentUser);
 
-            switch (choice) {
-            case 1:
-                cout << "進入遊戲世界... (功能尚未實作)\n";
-                break;
-            case 2:
-                cout << "進入角色創建介面... (功能尚未實作)\n";
-                break;
-            case 3:
+            if (selectedChar == nullptr) {
                 accountSys.logout();
-                break;
-            default:
-                cout << "無效輸入。\n";
+            }
+            else {
+                // === 進入遊戲世界 ===
+                cout << "\n正在讀取地圖...\n";
+                MapSystem mapSys; // 建立地圖系統
+
+                // 啟動遊戲主迴圈
+                runGameLoop(selectedChar, mapSys);
+
+                // 離開迴圈代表結束冒險，回到選單
+                cout << "正在返回角色選單...\n";
+                system("pause");
             }
         }
     }
