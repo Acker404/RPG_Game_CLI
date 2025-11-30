@@ -18,13 +18,14 @@ void shopMenu(Character* player) {
         cout << "1. 小紅藥水 (HP+50)  - $20\n";
         cout << "2. 小藍藥水 (MP+30)  - $30\n";
         cout << "3. 鐵劍 (Atk+10)     - $100\n";
-        cout << "4. 離開商店\n";
-        cout << "請選擇: ";
+        cout << "4. 武器強化卷軸 - $50\n";
+        cout << "5. 回城卷軸 (傳送) - $30\n";
+        cout << "6. Exit\n";
 
         int choice;
         cin >> choice;
 
-        if (choice == 4) break;
+        if (choice == 6) break;
 
         Item* newItem = nullptr;
 
@@ -37,6 +38,12 @@ void shopMenu(Character* player) {
             break;
         case 3:
             if (player->spendMoney(100)) newItem = new Equipment("鐵劍", 100, WEAPON, 10);
+            break;
+        case 4:
+            if (player->spendMoney(50)) newItem = new Scroll("強化卷軸", 50, 2);
+            break;
+        case 5:
+            if (player->spendMoney(30)) newItem = new Scroll("回城卷軸", 30, 1);
             break;
         }
 
@@ -98,7 +105,6 @@ void runGameLoop(Character* player, MapSystem& mapSys) {
         // ... 原本的移動邏輯 ...
         // 2. 玩家輸入 (不需按 Enter)
         // _getch() 會回傳按下的鍵值
-        key = _getch();
 
         if (key == 'q' || key == 'Q') {
             // 離開遊戲

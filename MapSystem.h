@@ -46,4 +46,10 @@ public:
     // Getters 用於判斷遭遇事件
     NodeType getCurrentNodeType() const { return mapGrid[playerY][playerX].type; }
     string getCurrentLocationName() const { return mapGrid[playerY][playerX].name; }
+    // 加入 public 方法
+    void teleportToTown() {
+        playerX = 2;
+        playerY = 2;
+        cout << "咻！你被傳送回到了城鎮中心。\n";
+    }
 };

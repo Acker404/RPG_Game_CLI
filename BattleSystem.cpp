@@ -57,7 +57,7 @@ void BattleSystem::playerTurn(Character* player, Monster& monster, bool& escaped
     switch (choice) {
     case '1': // 普攻
         // 簡單公式：玩家力量 + 浮動值
-        damage = player->getStr() + (rand() % 5);
+        damage = player->getTotalStr() + (rand() % 5) + (rand() % 5);
         cout << "\n你揮舞武器攻擊 " << monster.name << "！\n";
         Sleep(500);
         monster.takeDamage(damage);
@@ -72,14 +72,14 @@ void BattleSystem::playerTurn(Character* player, Monster& monster, bool& escaped
             // 戰士技能：強力一擊 (消耗 MP 10)
             if (player->getMp() >= 10) {
                 player->useSkill(); // 顯示技能文字
-                damage = player->getStr() * 2; // 兩倍傷害
+                damage = player->getTotalStr() + (rand() % 5) * 2; // 兩倍傷害
                 player->consumeMp(10);
                 monster.takeDamage(damage);
                 cout << ">>> 造成了 " << damage << " 點暴擊傷害！\n";
             }
             else {
                 cout << "魔力不足！改為普通攻擊。\n";
-                damage = player->getStr();
+                damage = player->getTotalStr() + (rand() % 5);
                 monster.takeDamage(damage);
                 cout << ">>> 造成了 " << damage << " 點傷害！\n";
             }
@@ -95,7 +95,8 @@ void BattleSystem::playerTurn(Character* player, Monster& monster, bool& escaped
             }
             else {
                 cout << "魔力不足！改為法杖敲擊。\n";
-                damage = player->getStr(); // 法師普攻很弱
+                damage = player->getTotalStr() + (rand() % 5); // 法師普攻很弱
+
                 monster.takeDamage(damage);
                 cout << ">>> 造成了 " << damage << " 點傷害！\n";
             }
