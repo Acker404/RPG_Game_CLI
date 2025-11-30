@@ -149,7 +149,8 @@ void BattleSystem::battleResult(Character* player, Monster& monster) {
         cout << "獲得經驗值: " << monster.expReward << "\n";
         cout << "獲得金錢: " << monster.moneyReward << "\n";
 
-        player->addExp(monster.expReward); // 角色升級邏輯
+        player->addExp(monster.expReward);     // 增加經驗值
+        player->addMoney(monster.moneyReward); // <--- 補上這一行！真正把錢加進去
     }
     system("pause");
 }

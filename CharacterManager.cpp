@@ -1,6 +1,6 @@
 #include "CharacterManager.h"
 #include <iostream>
-
+#include "Item.h"
 CharacterManager::CharacterManager() {
     // 建構子
 }
@@ -36,9 +36,12 @@ void CharacterManager::loadUserCharacters(string username) {
         if (line.empty()) continue;
         stringstream ss(line);
         string u, n, j;
-        int lv, hp, mhp, mp, mmp, s, w, e;
+        // 記得給預設值，這樣就算讀檔失敗，也不會變成負數亂碼
+        int lv = 1, hp = 100, mhp = 100, mp = 50, mmp = 50, s = 10, w = 10, e = 0;
+        int mon = 100; // 給個預設金錢 100
 
-        ss >> u >> n >> j >> lv >> hp >> mhp >> mp >> mmp >> s >> w >> e;
+        // 1. 讀取基礎數值
+        ss >> u >> n >> j >> lv >> hp >> mhp >> mp >> mmp >> s >> w >> e >> mon;
 
         if (u == username) {
             Character* newChar = nullptr;
@@ -46,7 +49,45 @@ void CharacterManager::loadUserCharacters(string username) {
             else if (j == "Mage") newChar = new Mage(u, n, lv);
 
             if (newChar) {
+                // 設定數值 & 金錢
                 newChar->setStats(hp, mhp, mp, mmp, s, w, e);
+                newChar->addMoney(mon - 100); // 因為建構子預設給100，所以用 add 加回去差異值，或者直接把 setStats 加個 money 參數
+                // 更簡單的做法：Character 加一個 setMoney(mon)
+                // 這裡假設你有 setMoney 或者直接用指標操作：
+                // 為了方便，我們直接在 Character 加一個 public: void setMoney(int m) { money = m; }
+                // 讀者請自行去 Character.h 補上 setMoney，或者用 addMoney 湊數
+                // newChar->addMoney(mon - 100); // 暫時解法
+
+                // 為了穩健，請在 Character.h 加入 void setMoney(int m) { money = m; }
+                // 然後這裡呼叫：
+                // newChar->setMoney(mon); 
+
+                // 2. 讀取裝備
+                string weaponName, armorName;
+                ss >> weaponName >> armorName;
+
+                if (weaponName != "NONE") {
+                    Item* item = createItemByName(weaponName);
+                    // 強制轉型並穿上
+                    Equipment* equip = dynamic_cast<Equipment*>(item);
+                    if (equip) newChar->equipItem(equip);
+                }
+                if (armorName != "NONE") {
+                    Item* item = createItemByName(armorName);
+                    Equipment* equip = dynamic_cast<Equipment*>(item);
+                    if (equip) newChar->equipItem(equip);
+                }
+
+                // 3. 讀取背包
+                int invSize;
+                ss >> invSize;
+                for (int i = 0; i < invSize; i++) {
+                    string itemName;
+                    ss >> itemName;
+                    Item* item = createItemByName(itemName);
+                    if (item) newChar->addItem(item);
+                }
+
                 userCharacters.push_back(newChar);
             }
         }
@@ -188,4 +229,55 @@ Character* CharacterManager::selectCharacterMenu(string username) {
             cout << "無效輸入。\n";
         }
     }
+}
+void CharacterManager::saveToFile() {
+    // 這裡的邏輯比較麻煩：
+    // 因為 userCharacters 只存了「當前使用者」的角色
+    // 我們不能直接覆蓋檔案，否則「其他使用者」的角色會消失！
+
+    // 正確邏輯：
+    // 1. 讀取檔案中「所有」角色的字串 (readAllLines)
+    // 2. 找出那些「不是當前使用者」的資料，保留下來
+    // 3. 將「當前使用者」的最新資料 (userCharacters) 轉成字串加入
+    // 4. 全部寫回檔案
+
+    // 但這有點複雜，對於作業來說，我們可以用一個簡單的偷吃步：
+    // 每次 loadUserCharacters 時，其實我們沒有保存其他人的資料。
+
+    // === 簡易實作版 (假設這台電腦只有你一個人在測) ===
+    // 或者，我們在 main 結束時，把當前角色的狀態更新進去。
+
+    // 讓我們實作一個穩健的版本：
+
+    // Step 1: 讀取舊檔所有資料
+    vector<string> allLines = readAllLines();
+    vector<string> newLines;
+
+    // Step 2: 保留「非當前使用者」的資料
+    // 我們需要知道當前 userCharacters 屬於哪個 username
+    string currentUsername = "";
+    if (!userCharacters.empty()) currentUsername = userCharacters[0]->getUsername();
+
+    if (currentUsername == "") return; // 沒人登入，不用存
+
+    for (string line : allLines) {
+        stringstream ss(line);
+        string u;
+        ss >> u;
+        if (u != currentUsername) {
+            newLines.push_back(line);
+        }
+    }
+
+    // Step 3: 加入當前使用者的最新資料
+    for (Character* c : userCharacters) {
+        newLines.push_back(c->serialize());
+    }
+
+    // Step 4: 寫回
+    ofstream file(filePath); // 覆蓋模式
+    for (string line : newLines) {
+        file << line << endl;
+    }
+    cout << "遊戲資料已存檔。\n";
 }

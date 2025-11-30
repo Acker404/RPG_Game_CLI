@@ -188,7 +188,7 @@ int main() {
 
                 // 啟動遊戲主迴圈
                 runGameLoop(selectedChar, mapSys);
-
+                charMgr.saveToFile();
                 // 離開迴圈代表結束冒險，回到選單
                 cout << "正在返回角色選單...\n";
                 system("pause");

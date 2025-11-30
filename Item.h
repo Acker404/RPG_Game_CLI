@@ -34,6 +34,7 @@ public:
     virtual void showInfo() const {
         cout << "[" << name << "] $" << price << " - " << description;
     }
+    
 };
 
 // === 消耗品 ===
@@ -94,3 +95,5 @@ public:
     // 同樣只宣告，實作放 .cpp
     bool use(Character* user) override;
 };
+// 在 Item.h 最下面加入
+Item* createItemByName(string name);

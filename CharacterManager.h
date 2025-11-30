@@ -19,7 +19,7 @@ public:
     void loadUserCharacters(string username); // 讀取特定使用者的角色
     void createCharacter(string username);    // 創角
     void deleteCharacter(string username);    // 刪角
-
+    void saveToFile();
     // 選單
     Character* selectCharacterMenu(string username);
 };

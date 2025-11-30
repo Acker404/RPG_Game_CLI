@@ -168,14 +168,27 @@ public:
     }
 
     // 存檔用
+    // 修改 serialize
     virtual string serialize() {
         stringstream ss;
+        // 1. 基礎數值
         ss << username << " " << name << " " << job << " "
             << level << " " << hp << " " << maxHp << " "
-            << mp << " " << maxMp << " " << str << " " << wis << " " << exp;
+            << mp << " " << maxMp << " " << str << " " << wis << " " << exp << " " << money;
+
+        // 2. 裝備狀態 (存名稱，如果沒裝備存 "NONE")
+        ss << " " << (weaponSlot ? weaponSlot->getName() : "NONE");
+        ss << " " << (armorSlot ? armorSlot->getName() : "NONE");
+
+        // 3. 背包物品 (先存數量，再存每個物品的名稱)
+        ss << " " << inventory.size();
+        for (Item* item : inventory) {
+            ss << " " << item->getName();
+        }
+
         return ss.str();
     }
-
+    void setMoney(int m) { money = m; }
     void setStats(int h, int mh, int m, int mm, int s, int w, int e) {
         hp = h; maxHp = mh; mp = m; maxMp = mm; str = s; wis = w; exp = e;
     }
@@ -197,6 +210,7 @@ public:
     void showStats() override {
         cout << "[戰士] " << name << " Lv." << level
             << " HP:" << hp << "/" << maxHp
+            << " MP:" << mp << "/" << maxMp
             << " Atk:" << getTotalStr() << endl; // 用 getTotalStr
     }
 };

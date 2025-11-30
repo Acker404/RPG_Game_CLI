@@ -41,3 +41,19 @@ bool Scroll::use(Character* user) {
     }
     return false;
 }
+// 簡單的物品工廠：根據名稱回傳對應的物件
+Item* createItemByName(string name) {
+    // === 消耗品 ===
+    if (name == "小紅藥水") return new Consumable("小紅藥水", 20, 50, false);
+    if (name == "小藍藥水") return new Consumable("小藍藥水", 30, 30, true);
+
+    // === 裝備 ===
+    if (name == "鐵劍") return new Equipment("鐵劍", 100, WEAPON, 10);
+    // 如果你有更多裝備，請在這裡加
+
+    // === 卷軸 ===
+    if (name == "強化卷軸") return new Scroll("強化卷軸", 50, 2);
+    if (name == "回城卷軸") return new Scroll("回城卷軸", 30, 1);
+
+    return nullptr; // 找不到
+}
