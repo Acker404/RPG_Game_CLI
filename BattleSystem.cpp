@@ -65,9 +65,6 @@ void BattleSystem::playerTurn(Character* player, Monster& monster, bool& escaped
         break;
 
     case '2': // 技能
-        // 這裡呼叫 Character 的純虛擬函式
-        // 注意：為了讓技能真的能扣怪物的血，我們可能需要修改一下 Character::useSkill 的定義
-        // 但為了不動舊code，我們先在這裡簡單判定職業
         if (player->getJob() == "Warrior") {
             // 戰士技能：強力一擊 (消耗 MP 10)
             if (player->getMp() >= 10) {

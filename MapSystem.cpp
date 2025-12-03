@@ -44,7 +44,7 @@ bool MapSystem::movePlayer(char direction) {
     int newX = playerX;
     int newY = playerY;
 
-    // 處理輸入 (大小寫通吃)
+    // 處理輸入
     switch (direction) {
     case 'w': case 'W': newY--; break; // 向上
     case 's': case 'S': newY++; break; // 向下

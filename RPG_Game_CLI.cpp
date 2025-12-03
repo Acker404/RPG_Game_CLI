@@ -115,8 +115,35 @@ void runGameLoop(Character* player, MapSystem& mapSys) {
 
             // 3. 移動邏輯
             if (mapSys.movePlayer(key)) {
-                // 移動成功後，可以在這裡判斷是否遇怪 (下個階段做)
-                // if (mapSys.getCurrentNodeType() == WILD) { ... }
+                    // === 移動成功後，檢查是否遇怪 ===
+                NodeType currentType = mapSys.getCurrentNodeType();
+
+                if (currentType == WILD) {
+                    // 野外：50% 機率遇怪
+                    if (rand() % 100 < 50) {
+                        // 隨機產生怪物 (II.i 生成怪物)
+                        int rnd = rand() % 2;
+                        int rand_num = rand();
+                        if (rnd == 0) {
+                            Monster m("長牙野豬", 1, 50 + ((rand_num % 50) / 4), 8 + ((rand_num % 8) / 4), 20 + ((rand_num % 20) / 4), 10 + ((rand_num % 10) / 4));
+                            battleSys.startBattle(player, m);
+                        }
+                        else {
+                            Monster m("灰狼", 2, 80 + ((rand_num % 80) / 4), 12 + ((rand_num % 12) / 4), 35 + ((rand_num % 35) / 4), 20 + ((rand_num % 20) / 4));
+                            battleSys.startBattle(player, m);
+                        }
+                    }
+                }
+                else if (currentType == BOSS) {
+                    // Boss 區：強制遇怪
+                    int rand_num = rand();
+                    Monster boss("地獄守門犬", 10, 500 + ((rand_num % 50) / 4), 30 + ((rand_num % 30) / 4), 500 + ((rand_num % 500) / 4), 1000 + ((rand_num % 1000) / 4));
+                    std::cout << "\n你感受到一股強大的殺氣...\n";
+                    Sleep(1000);
+                    battleSys.startBattle(player, boss);
+
+                    // 打贏 Boss 可以直接獲勝或退回上一格 (這裡暫時不處理)
+                }
             }
             else {
                 // 撞牆了，暫停一下讓玩家看到錯誤訊息
@@ -124,35 +151,8 @@ void runGameLoop(Character* player, MapSystem& mapSys) {
                 _getch();
             }
         }
-        if (mapSys.movePlayer(key)) {
-            // === 移動成功後，檢查是否遇怪 ===
-            NodeType currentType = mapSys.getCurrentNodeType();
-
-            if (currentType == WILD) {
-                // 野外：30% 機率遇怪
-                if (rand() % 100 < 30) {
-                    // 隨機產生怪物 (II.i 生成怪物)
-                    int rnd = rand() % 2;
-                    if (rnd == 0) {
-                        Monster m("長牙野豬", 1, 50, 8, 20, 10);
-                        battleSys.startBattle(player, m);
-                    }
-                    else {
-                        Monster m("灰狼", 2, 80, 12, 35, 20);
-                        battleSys.startBattle(player, m);
-                    }
-                }
-            }
-            else if (currentType == BOSS) {
-                // Boss 區：強制遇怪
-                Monster boss("地獄守門犬", 10, 500, 30, 500, 1000);
-                cout << "\n你感受到一股強大的殺氣...\n";
-                Sleep(1000);
-                battleSys.startBattle(player, boss);
-
-                // 打贏 Boss 可以直接獲勝或退回上一格 (這裡暫時不處理)
-            }
-        }
+        
+        Sleep(500);
     }
 }
 
