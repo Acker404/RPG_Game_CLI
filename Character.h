@@ -5,6 +5,7 @@
 #include <sstream>
 #include "Item.h" // 必須引入 Item.h 才能認識 Equipment
 
+
 using namespace std;
 
 class Character {
@@ -12,15 +13,37 @@ protected:
     string username;
     string name;
     string job;
+
+    // 角色等級
+    // - 表示玩家職業等級 (LV)
+    // - 當經驗值 exp 累積到門檻時會呼叫 levelUp() 並增加此值
     int level;
+
+    // 生命與魔力相關數值
+    // hp: 目前生命值
+    // maxHp: 最大生命值上限
+    // mp: 目前魔力值
+    // maxMp: 最大魔力值上限
+    // 使用時請確保 hp <= maxHp 且 mp <= maxMp；傷害與回復應更新 hp/mp 並做上下界檢查
     int hp, maxHp;
     int mp, maxMp;
+
+    // 基礎屬性值（不包含裝備加成）
+    // str: 力量，用於計算物理攻擊力
+    // wis: 智慧，用於計算魔法相關效果（例如法術強度或智力屬性）
+    // 若有裝備或其他增益，請透過 getTotalStr()/getTotalWis() 取得最終值
     int str;
     int wis;
+
+    // 經驗與貨幣
+    // exp: 當 exp >= 100 時會自動升級（範例實作），可以依需求調整升級門檻或邏輯
+    // money: 持有金錢數量，用於購買道具或強化
     int exp;
     int money;
 
     // === 新增裝備與背包 ===
+    // inventory: 背包，儲存 Item* 的指標（注意記憶體管理）
+    // weaponSlot / armorSlot: 裝備欄位，指向已裝備的 Equipment（或為 nullptr）
     vector<Item*> inventory;
     Equipment* weaponSlot; // 武器欄位
     Equipment* armorSlot;  // 防具欄位

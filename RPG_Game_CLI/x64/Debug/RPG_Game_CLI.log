@@ -1,3 +1,7 @@
-﻿  RPG_Game_CLI.cpp
+﻿  BattleSystem.cpp
+  CharacterManager.cpp
+  Item.cpp
+  RPG_Game_CLI.cpp
 C:\Users\mark9\Desktop\RPG_Game_CLI\RPG_Game_CLI\RPG_Game_CLI.cpp(84,15): warning C4244: '引數': 將 'time_t' 轉換為 'unsigned int'，由於類型不同，可能導致資料遺失
+  正在產生程式碼...
   RPG_Game_CLI.vcxproj -> C:\Users\mark9\Desktop\RPG_Game_CLI\RPG_Game_CLI\x64\Debug\RPG_Game_CLI.exe
