@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
-
+#include "Monster.h"
 using namespace std;
 
 // 地圖節點類型
@@ -39,8 +39,8 @@ public:
     // 移動邏輯 (回傳 true 代表移動成功，false 代表撞牆)
     bool movePlayer(char direction);
 
-    // 顯示功能
-    void displayMap();      // 畫出九宮格或地圖全貌
+    // === 修改這裡：加入 monsters 參數 ===
+    void displayMap(const vector<Monster>& monsters);
     void showCurrentInfo(); // 顯示當前位置詳細資訊
 
     // Getters 用於判斷遭遇事件

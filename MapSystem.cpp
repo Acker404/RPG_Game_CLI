@@ -71,33 +71,65 @@ bool MapSystem::movePlayer(char direction) {
     return true;
 }
 
-void MapSystem::displayMap() {
-    // 這裡我們畫出一個簡單的 5x5 網格
-    // 玩家位置用紅色或特殊符號標示
+void MapSystem::displayMap(const vector<Monster>& monsters) {
+    // 設定欄位寬度常數，方便調整
+    const int MAP_CELL_WIDTH = 10; // 地圖每一格的寬度 (因中文字寬度問題，建議設寬一點)
+    const int MONSTER_NAME_WIDTH = 14;
 
-    cout << "\n      === 世界地圖 ===\n\n";
+    cout << "\n";
+    cout << "      === 世界地圖 ===                  === 周邊怪物 ===\n\n";
 
     for (int y = 0; y < height; y++) {
-        cout << "  "; // 縮排
+        // === 1. 畫地圖左半邊 ===
+        cout << "  "; // 最左邊縮排
         for (int x = 0; x < width; x++) {
+            // 準備要顯示的字串
+            string cellDisplay;
             if (x == playerX && y == playerY) {
-                // 玩家位置：用 [] 包起來，並加上Ｐ
-                cout << "[★你★]";
+                cellDisplay = "[我]";
             }
             else {
-                // 其他位置
-                if (mapGrid[y][x].type == WALL)
-                    cout << " . . . "; // 牆壁顯示點點
-                else
-                    cout << mapGrid[y][x].name;
+                if (mapGrid[y][x].type == WALL) cellDisplay = "| . . . |";
+                else cellDisplay = mapGrid[y][x].name;
             }
-            if (x < width - 1) cout << " - "; // 橫向連接線
-        }
-        cout << "\n";
 
-        // 畫縱向連接線 (除了最後一行)
+            // 使用 setw 設定寬度，並靠左對齊 (left)
+            cout << left << setw(MAP_CELL_WIDTH) << cellDisplay ;
+
+            // 畫橫向連接線 (如果不是最後一格)
+            if (x < width - 1) cout << "- ";
+        }
+
+        // === 2. 畫右側怪物列表 ===
+        cout << "   |   "; // 中間分隔線
+
+        if (y == 0) {
+            // 標題列
+            cout << "#  " << left << setw(MONSTER_NAME_WIDTH) << "怪物名稱" << "強度";
+        }
+        else if (y <= monsters.size()) {
+            // 顯示怪物資訊
+            // 注意：monsters 的 index 是 y-1
+            const Monster& m = monsters[y - 1];
+            cout << y << ". "
+                << left << setw(MONSTER_NAME_WIDTH) << m.name
+                << "Lv." << m.level;
+        }
+        else if (y == monsters.size() + 1 && !monsters.empty()) {
+            cout << "(按 1-" << monsters.size() << " 戰鬥)";
+        }
+
+        cout << "\n"; // 換行
+
+        // === 3. 畫地圖的縱向連接線 (除了最後一行) ===
         if (y < height - 1) {
-            cout << "            |         |         |         |         |\n";
+            cout << "  "; // 對齊第一格的中間
+            for (int k = 0; k < width - 1; k++) {
+                // 這裡手動調整直線的位置，讓它看起來在地圖格子下方
+                cout << "|-------|"; // 根據 MAP_CELL_WIDTH 調整這裡的空白數
+                if (k < width - 1) cout << " - ";
+            }
+            cout << "|\n";
         }
     }
 }

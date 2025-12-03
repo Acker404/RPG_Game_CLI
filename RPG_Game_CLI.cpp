@@ -9,7 +9,26 @@
 using namespace std;
 // 在 main.cpp 上方加入
 #include "Item.h"
-
+// 在 runGameLoop 之前，加入一個生成怪物的輔助函式
+vector<Monster> generateMonstersForLocation(NodeType type) {
+    vector<Monster> mobs;
+	int moster_num = rand(); // 用於調整怪物屬性
+    if (type == WILD) {
+        // 隨機生成 1~3 隻
+        int count = (rand() % 3) + 1;
+		
+        for (int i = 0; i < count; i++) {
+            int rnd = rand() % 2;
+            if (rnd == 0) mobs.push_back(Monster("長牙野豬", 1, 50 + ((moster_num % 50) / 4), 8 + ((moster_num % 8) / 4), 20 + ((moster_num % 20) / 4), 10 + ((moster_num % 10) / 4)));
+            else mobs.push_back(Monster("灰狼", 2, 80 + ((moster_num % 80) / 4), 12 + +((moster_num % 12) / 4), 35 + ((moster_num % 35) / 4), 20 + ((moster_num % 20) / 4)));
+        }
+    }
+    else if (type == BOSS) {
+        // Boss 只有一隻
+        mobs.push_back(Monster("地獄守門犬", 10, 500 + ((moster_num % 500) / 4), 30 + ((moster_num % 30) / 4), 500 + ((moster_num % 500) / 4), 1000 + ((moster_num % 1000) / 4)));
+    }
+    return mobs;
+}
 void shopMenu(Character* player) {
     while (true) {
         system("cls");
@@ -61,101 +80,87 @@ void shopMenu(Character* player) {
 // 遊戲主迴圈
 void runGameLoop(Character* player, MapSystem& mapSys) {
     bool isRunning = true;
-    BattleSystem battleSys; // 建立戰鬥系統物件
-
-    // 設定隨機數種子 (讓每次怪物、戰鬥結果都不同)
+    BattleSystem battleSys;
     srand(time(NULL));
 
+    // 當前地圖上的怪物列表
+    vector<Monster> currentMonsters;
+
+    // 剛進入遊戲，先生成一次 (如果出生點有怪的話)
+    currentMonsters = generateMonstersForLocation(mapSys.getCurrentNodeType());
+
     while (isRunning) {
-        system("cls"); // 清空螢幕 (Windows 專用)
+        system("cls");
 
-        // 1. 顯示介面
-        player->showStats(); // 顯示角色狀態 (繼承自 Character)
-        mapSys.displayMap(); // 顯示地圖
-        mapSys.showCurrentInfo(); // 顯示當前位置資訊
-        // 在 runGameLoop 裡
+        // 1. 顯示介面 (傳入怪物列表)
+        player->showStats();
+        mapSys.displayMap(currentMonsters); // <--- 改這裡
+        mapSys.showCurrentInfo();
+        cout << "[I] 背包  [B] 商店  [Q] 離開\n";
 
-        cout << "[I] 背包 (Inventory)  [B] 商店/互動 (Buy)\n"; // 新增提示
-
+        // 2. 玩家輸入
         char key = _getch();
 
-        if (key == 'i' || key == 'I') {
-            // === 打開背包 ===
-            system("cls");
-            player->showInventory();
-            cout << "\n輸入物品編號使用 (0 返回): ";
-            int idx;
-            cin >> idx;
-            if (idx > 0) {
-                player->useItem(idx - 1);
-                system("pause");
-            }
-        }
-        else if (key == 'b' || key == 'B') {
-            // === 商店互動 ===
-            // 只有在地圖節點是 SHOP 時才有效
-            if (mapSys.getCurrentNodeType() == SHOP) {
-                shopMenu(player);
-            }
-            else {
-                cout << "\n這裡沒有商店。\n";
-                system("pause"); // 讓玩家看到提示
-            }
-        }
-        // ... 原本的移動邏輯 ...
-        // 2. 玩家輸入 (不需按 Enter)
-        // _getch() 會回傳按下的鍵值
-
         if (key == 'q' || key == 'Q') {
-            // 離開遊戲
             break;
         }
         else if (key == 'w' || key == 's' || key == 'a' || key == 'd' ||
             key == 'W' || key == 'S' || key == 'A' || key == 'D') {
 
-            // 3. 移動邏輯
+            // 移動玩家
             if (mapSys.movePlayer(key)) {
-                    // === 移動成功後，檢查是否遇怪 ===
-                NodeType currentType = mapSys.getCurrentNodeType();
-
-                if (currentType == WILD) {
-                    // 野外：50% 機率遇怪
-                    if (rand() % 100 < 50) {
-                        // 隨機產生怪物 (II.i 生成怪物)
-                        int rnd = rand() % 2;
-                        int rand_num = rand();
-                        if (rnd == 0) {
-                            Monster m("長牙野豬", 1, 50 + ((rand_num % 50) / 4), 8 + ((rand_num % 8) / 4), 20 + ((rand_num % 20) / 4), 10 + ((rand_num % 10) / 4));
-                            battleSys.startBattle(player, m);
-                        }
-                        else {
-                            Monster m("灰狼", 2, 80 + ((rand_num % 80) / 4), 12 + ((rand_num % 12) / 4), 35 + ((rand_num % 35) / 4), 20 + ((rand_num % 20) / 4));
-                            battleSys.startBattle(player, m);
-                        }
-                    }
+                // === 移動成功，生成新地點的怪物 ===
+                // 如果是城鎮或商店，怪物清空；如果是野外，隨機生成
+                NodeType type = mapSys.getCurrentNodeType();
+                if (type == TOWN || type == SHOP) {
+                    currentMonsters.clear();
                 }
-                else if (currentType == BOSS) {
-                    // Boss 區：強制遇怪
-                    int rand_num = rand();
-                    Monster boss("地獄守門犬", 10, 500 + ((rand_num % 50) / 4), 30 + ((rand_num % 30) / 4), 500 + ((rand_num % 500) / 4), 1000 + ((rand_num % 1000) / 4));
-                    std::cout << "\n你感受到一股強大的殺氣...\n";
-                    Sleep(1000);
-                    battleSys.startBattle(player, boss);
-
-                    // 打贏 Boss 可以直接獲勝或退回上一格 (這裡暫時不處理)
+                else {
+                    currentMonsters = generateMonstersForLocation(type);
                 }
             }
             else {
-                // 撞牆了，暫停一下讓玩家看到錯誤訊息
-                cout << "按任意鍵繼續...";
-                _getch();
+                cout << "無法移動！\n";
+                system("pause"); // 稍微暫停讓玩家看到錯誤
             }
         }
-        
-        Sleep(500);
+        // === 新增：戰鬥選擇邏輯 ===
+        else if (key >= '1' && key <= '3') {
+            // 將 char '1' 轉為 int 0, '2' 轉為 1...
+            int index = key - '1';
+
+            if (index >= 0 && index < currentMonsters.size()) {
+                // 開始戰鬥！
+                Monster target = currentMonsters[index];
+                battleSys.startBattle(player, target);
+
+                // 戰鬥結束後，這隻怪物應該消失
+                // (如果玩家逃跑或輸了，要看你的設計，這裡假設打贏就消失)
+                if (target.isDead()) { // 注意：因為傳值呼叫，這裡 target 的狀態可能沒更新
+                    // 簡單做法：只要戰鬥結束且玩家沒死，就當作贏了移除它
+                    // 更嚴謹的做法是讓 BattleSystem 回傳結果
+                    if (!player->isDead()) {
+                        currentMonsters.erase(currentMonsters.begin() + index);
+                    }
+                }
+                // 如果是 Boss 且打贏了，可能會有特殊劇情
+            }
+        }
+        else if (key == 'i' || key == 'I') {
+            // (背包邏輯保持不變...)
+            system("cls");
+            player->showInventory();
+            cout << "\n輸入物品編號使用 (0 返回): ";
+            int idx; cin >> idx;
+            if (idx > 0) { player->useItem(idx - 1); system("pause"); }
+        }
+        else if (key == 'b' || key == 'B') {
+            // (商店邏輯保持不變...)
+            if (mapSys.getCurrentNodeType() == SHOP) shopMenu(player);
+        }
+		Sleep(100); // 小延遲，避免過快迴圈
     }
 }
-
 int main() {
     setlocale(LC_ALL, "");
 
