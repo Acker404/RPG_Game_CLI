@@ -41,29 +41,27 @@ void BattleSystem::startBattle(Character* player, Monster monster) {
         battleResult(player, monster);
     }
 }
-
 void BattleSystem::playerTurn(Character* player, Monster& monster, bool& escaped) {
-    cout << "\n[你的行動]\n";
-    cout << "1. 普通攻擊\n";
-    cout << "2. 使用技能\n";
-    cout << "3. 逃跑\n";
-    cout << "請選擇: ";
-
+    cout << "\n[你的行動]\n1. 攻擊\n2. 技能\n3. 逃跑\n請選擇: ";
     char choice = _getch();
-    cout << choice << endl; // 顯示按下的鍵
-
     int damage = 0;
 
     switch (choice) {
-    case '1': // 普攻
-        // 簡單公式：玩家力量 + 浮動值
-        damage = player->getTotalStr() + (rand() % 5) + (rand() % 5);
-        cout << "\n你揮舞武器攻擊 " << monster.name << "！\n";
+    case '1': // 普通攻擊
+        // === 幸運檢定：爆擊判定 ===
+        if (rand() % 100 < player->getCritRate()) {
+            cout << "\n[CRITICAL!] 幸運爆發！出現了致命一擊！\n";
+            damage = (player->getTotalStr() * 1.5) + (rand() % 5); // 1.5倍傷害
+        }
+        else {
+            damage = player->getTotalStr() + (rand() % 5);
+        }
+
+        cout << "\n你攻擊了 " << monster.name << "！\n";
         Sleep(500);
         monster.takeDamage(damage);
         cout << ">>> 造成了 " << damage << " 點傷害！\n";
         break;
-
     case '2': // 技能
         if (player->getJob() == "Warrior") {
             // 戰士技能：強力一擊 (消耗 MP 10)
@@ -119,12 +117,24 @@ void BattleSystem::playerTurn(Character* player, Monster& monster, bool& escaped
 }
 
 void BattleSystem::enemyTurn(Character* player, Monster& monster) {
-    // 怪物簡單攻擊邏輯
-    int dmg = monster.attack + (rand() % 3);
-    // 簡單防禦公式 (目前玩家還沒防禦屬性，直接扣血)
-    player->takeDamage(dmg);
-    cout << ">>> " << monster.name << " 對你造成了 " << dmg << " 點傷害！\n";
-    cout << "你的剩餘血量: " << player->getHp() << endl;
+    cout << "\n輪到 " << monster.name << " 攻擊了...\n";
+    Sleep(800);
+
+    // === 敏捷檢定：閃避判定 ===
+    // 玩家閃避率 = Agi / 2 (例如 20 敏捷 = 10% 閃避)
+    // 這裡設個上限，例如最高 50%
+    int dodgeChance = player->getDodgeRate();
+    if (dodgeChance > 50) dodgeChance = 50;
+
+    if (rand() % 100 < dodgeChance) {
+        cout << ">>> [MISS] 你的身手太敏捷了，完全閃過了 " << monster.name << " 的攻擊！\n";
+    }
+    else {
+        int dmg = monster.attack + (rand() % 3);
+        player->takeDamage(dmg);
+        cout << ">>> " << monster.name << " 對你造成了 " << dmg << " 點傷害！\n";
+        cout << "你的剩餘血量: " << player->getHp() << endl;
+    }
 }
 
 void BattleSystem::battleResult(Character* player, Monster& monster) {

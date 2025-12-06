@@ -37,11 +37,13 @@ void CharacterManager::loadUserCharacters(string username) {
         stringstream ss(line);
         string u, n, j;
         // 記得給預設值，這樣就算讀檔失敗，也不會變成負數亂碼
-        int lv = 1, hp = 100, mhp = 100, mp = 50, mmp = 50, s = 10, w = 10, e = 0;
-        int mon = 100; // 給個預設金錢 100
+        // 更新變數宣告，加入 agi, luk, sp (statPoints)
+        int lv = 1, hp = 100, mhp = 100, mp = 50, mmp = 50;
+        int s = 10, w = 10, a = 10, l = 10, sp = 0, e = 0, mon = 100;
 
-        // 1. 讀取基礎數值
-        ss >> u >> n >> j >> lv >> hp >> mhp >> mp >> mmp >> s >> w >> e >> mon;
+        // 更新讀取順序 (配合 serialize)
+        ss >> u >> n >> j >> lv >> hp >> mhp >> mp >> mmp
+            >> s >> w >> a >> l >> sp >> e >> mon;
 
         if (u == username) {
             Character* newChar = nullptr;
@@ -49,9 +51,9 @@ void CharacterManager::loadUserCharacters(string username) {
             else if (j == "Mage") newChar = new Mage(u, n, lv);
 
             if (newChar) {
-                // 設定數值 & 金錢
-                newChar->setStats(hp, mhp, mp, mmp, s, w, e);
-                newChar->addMoney(mon - 100); // 因為建構子預設給100，所以用 add 加回去差異值，或者直接把 setStats 加個 money 參數
+                // 使用新的 setStats
+                newChar->setStats(hp, mhp, mp, mmp, s, w, a, l, sp, e);
+                newChar->setMoney(mon);
                 // 更簡單的做法：Character 加一個 setMoney(mon)
                 // 這裡假設你有 setMoney 或者直接用指標操作：
                 // 為了方便，我們直接在 Character 加一個 public: void setMoney(int m) { money = m; }

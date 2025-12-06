@@ -96,10 +96,23 @@ void runGameLoop(Character* player, MapSystem& mapSys) {
         player->showStats();
         mapSys.displayMap(currentMonsters); // <--- 改這裡
         mapSys.showCurrentInfo();
-        cout << "[I] 背包  [B] 商店  [Q] 離開\n";
 
-        // 2. 玩家輸入
+        cout << "[I] 背包  [B] 商店  [C] 角色狀態(配點)  [Q] 離開\n"; // 新增提示
+
         char key = _getch();
+
+        if (key == 'c' || key == 'C') {
+            // === 角色狀態與配點 ===
+            system("cls");
+            player->showStats(); // 這會顯示剩餘點數
+
+            cout << "\n按 [Y] 進入配點模式，按其他鍵返回: ";
+            char c2 = _getch();
+            if (c2 == 'y' || c2 == 'Y') {
+                player->allocateStats(); // 進入 Character 定義的配點迴圈
+            }
+        }
+        // 2. 玩家輸入
 
         if (key == 'q' || key == 'Q') {
             break;
