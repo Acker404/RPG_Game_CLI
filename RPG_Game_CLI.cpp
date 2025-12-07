@@ -36,10 +36,13 @@ void shopMenu(Character* player) {
         cout << "老闆: 歡迎！今天想買點什麼？ (持有金錢: " << player->getMoney() << ")\n";
         cout << "1. 小紅藥水 (HP+50)  - $20\n";
         cout << "2. 小藍藥水 (MP+30)  - $30\n";
-        cout << "3. 鐵劍 (Atk+10)     - $100\n";
-        cout << "4. 武器強化卷軸 - $50\n";
-        cout << "5. 回城卷軸 (傳送) - $30\n";
-        cout << "6. Exit\n";
+        cout << "3. 鐵劍 (Atk+10)     - $80\n";
+        cout << "4. 法杖 (wis+10)     - $80\n"; 
+        cout << "5. 戒指 (lucky+5)     - $30\n";
+        cout << "6. 衣服 (agi+5)     - $50\n";
+        cout << "7. 武器強化卷軸 - $50\n";
+        cout << "8. 回城卷軸 (傳送) - $30\n";
+        cout << "0. Exit\n";
 
         int choice;
         cin >> choice;
@@ -56,12 +59,21 @@ void shopMenu(Character* player) {
             if (player->spendMoney(30)) newItem = new Consumable("小藍藥水", 30, 30, true);
             break;
         case 3:
-            if (player->spendMoney(100)) newItem = new Equipment("鐵劍", 100, WEAPON, 10);
+            if (player->spendMoney(100)) newItem = new Equipment("鐵劍", 80, WEAPON, 10);
             break;
         case 4:
+            if (player->spendMoney(100)) newItem = new Equipment("法杖", 80, WEAPON, 10);
+            break; 
+        case 5:
+                if (player->spendMoney(100)) newItem = new Equipment("戒指", 30, ACCESSORY, 5);
+                break;
+        case 6:
+            if (player->spendMoney(100)) newItem = new Equipment("衣服", 50, ARMOR, 5);
+            break;
+        case 7:
             if (player->spendMoney(50)) newItem = new Scroll("強化卷軸", 50, 2);
             break;
-        case 5:
+        case 8:
             if (player->spendMoney(30)) newItem = new Scroll("回城卷軸", 30, 1);
             break;
         }

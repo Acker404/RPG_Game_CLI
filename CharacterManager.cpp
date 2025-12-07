@@ -24,7 +24,7 @@ vector<string> CharacterManager::readAllLines() {
 }
 
 void CharacterManager::loadUserCharacters(string username) {
-    // 先清空目前的列表
+    // ... (清除舊資料的代碼保持不變) ...
     for (auto c : userCharacters) delete c;
     userCharacters.clear();
 
@@ -32,45 +32,43 @@ void CharacterManager::loadUserCharacters(string username) {
     if (!file.is_open()) return;
 
     string line;
+    // === 修改讀取邏輯 ===
     while (getline(file, line)) {
         if (line.empty()) continue;
-        stringstream ss(line);
-        string u, n, j;
-        // 記得給預設值，這樣就算讀檔失敗，也不會變成負數亂碼
-        // 更新變數宣告，加入 agi, luk, sp (statPoints)
-        int lv = 1, hp = 100, mhp = 100, mp = 50, mmp = 50;
-        int s = 10, w = 10, a = 10, l = 10, sp = 0, e = 0, mon = 100;
 
-        // 更新讀取順序 (配合 serialize)
+        // 1. 跳過標題列 (如果開頭是 "帳號" 就跳過)
+        // 或者是檢查是否含有中文字標題
+        if (line.find("帳號") == 0) continue;
+
+        // 2. CSV 解析技巧：把所有逗號 ',' 替換成空格 ' '
+        // 這樣我們原本的 stringstream >> 邏輯就完全不用改！
+        for (int i = 0; i < line.size(); i++) {
+            if (line[i] == ',') line[i] = ' ';
+        }
+
+        stringstream ss(line);
+        // ... (以下原本的讀取邏輯完全不用動) ...
+        string u, n, j;
+        int lv, hp, mhp, mp, mmp, s, w, a, l, sp, e, mon;
+
         ss >> u >> n >> j >> lv >> hp >> mhp >> mp >> mmp
             >> s >> w >> a >> l >> sp >> e >> mon;
 
+        // ... (後面判斷 username 與 new Character 的邏輯保持不變) ...
         if (u == username) {
+            // ... 記得保留你原本寫好的 setStats 等邏輯 ...
             Character* newChar = nullptr;
             if (j == "Warrior") newChar = new Warrior(u, n, lv);
             else if (j == "Mage") newChar = new Mage(u, n, lv);
 
             if (newChar) {
-                // 使用新的 setStats
                 newChar->setStats(hp, mhp, mp, mmp, s, w, a, l, sp, e);
                 newChar->setMoney(mon);
-                // 更簡單的做法：Character 加一個 setMoney(mon)
-                // 這裡假設你有 setMoney 或者直接用指標操作：
-                // 為了方便，我們直接在 Character 加一個 public: void setMoney(int m) { money = m; }
-                // 讀者請自行去 Character.h 補上 setMoney，或者用 addMoney 湊數
-                // newChar->addMoney(mon - 100); // 暫時解法
 
-                // 為了穩健，請在 Character.h 加入 void setMoney(int m) { money = m; }
-                // 然後這裡呼叫：
-                // newChar->setMoney(mon); 
-
-                // 2. 讀取裝備
                 string weaponName, armorName;
                 ss >> weaponName >> armorName;
-
                 if (weaponName != "NONE") {
                     Item* item = createItemByName(weaponName);
-                    // 強制轉型並穿上
                     Equipment* equip = dynamic_cast<Equipment*>(item);
                     if (equip) newChar->equipItem(equip);
                 }
@@ -80,7 +78,6 @@ void CharacterManager::loadUserCharacters(string username) {
                     if (equip) newChar->equipItem(equip);
                 }
 
-                // 3. 讀取背包
                 int invSize;
                 ss >> invSize;
                 for (int i = 0; i < invSize; i++) {
@@ -89,18 +86,15 @@ void CharacterManager::loadUserCharacters(string username) {
                     Item* item = createItemByName(itemName);
                     if (item) newChar->addItem(item);
                 }
-
                 userCharacters.push_back(newChar);
             }
         }
     }
 }
-
 void CharacterManager::createCharacter(string username) {
-    loadUserCharacters(username); // 確保列表是最新的
+    loadUserCharacters(username);
     if (userCharacters.size() >= 3) {
-        cout << "錯誤：角色已達上限 (3隻)，請先刪除舊角色。\n";
-        return;
+        cout << "錯誤：角色已達上限 (3隻)。\n"; return;
     }
 
     string name;
@@ -128,15 +122,24 @@ void CharacterManager::createCharacter(string username) {
         cout << "無效的選擇。\n";
         return;
     }
+    // === 修改寫入部分 ===
+    // 判斷檔案是否為空 (如果是新檔案，要先寫標題)
+    ifstream fCheck(filePath);
+    bool isEmpty = (fCheck.peek() == ifstream::traits_type::eof());
+    fCheck.close();
 
-    // 寫入檔案 (Append 模式)
-    ofstream file(filePath, ios::app);
+    ofstream file(filePath, ios::app); // Append 模式
     if (file.is_open()) {
+        if (isEmpty) {
+            file << "帳號,角色名稱,職業,等級,HP,MaxHP,MP,MaxMP,力量,智慧,敏捷,幸運,剩餘點數,經驗值,金錢,武器,防具,背包數量,背包物品..." << endl;
+        }
         file << newChar->serialize() << endl;
         cout << "角色 " << name << " 創建成功！\n";
     }
-    delete newChar; // 寫入後刪除暫存物件，下次 loadUserCharacters 會重新讀取
+    delete newChar;
 }
+
+
 
 void CharacterManager::deleteCharacter(string username) {
     loadUserCharacters(username);
@@ -233,53 +236,44 @@ Character* CharacterManager::selectCharacterMenu(string username) {
     }
 }
 void CharacterManager::saveToFile() {
-    // 這裡的邏輯比較麻煩：
-    // 因為 userCharacters 只存了「當前使用者」的角色
-    // 我們不能直接覆蓋檔案，否則「其他使用者」的角色會消失！
-
-    // 正確邏輯：
-    // 1. 讀取檔案中「所有」角色的字串 (readAllLines)
-    // 2. 找出那些「不是當前使用者」的資料，保留下來
-    // 3. 將「當前使用者」的最新資料 (userCharacters) 轉成字串加入
-    // 4. 全部寫回檔案
-
-    // 但這有點複雜，對於作業來說，我們可以用一個簡單的偷吃步：
-    // 每次 loadUserCharacters 時，其實我們沒有保存其他人的資料。
-
-    // === 簡易實作版 (假設這台電腦只有你一個人在測) ===
-    // 或者，我們在 main 結束時，把當前角色的狀態更新進去。
-
-    // 讓我們實作一個穩健的版本：
-
-    // Step 1: 讀取舊檔所有資料
+    // ... (讀取舊資料、篩選非當前使用者的邏輯保持不變) ...
     vector<string> allLines = readAllLines();
     vector<string> newLines;
 
-    // Step 2: 保留「非當前使用者」的資料
-    // 我們需要知道當前 userCharacters 屬於哪個 username
     string currentUsername = "";
     if (!userCharacters.empty()) currentUsername = userCharacters[0]->getUsername();
 
-    if (currentUsername == "") return; // 沒人登入，不用存
-
+    // 注意：讀取舊資料時，因為 allLines 是直接讀每一行
+    // 我們要過濾掉舊的標題列，以免重複寫入
     for (string line : allLines) {
-        stringstream ss(line);
+        if (line.find("帳號") == 0) continue; // 跳過舊標題
+
+        // 解析這行是誰的 (需要先轉成空格處理才能讀 username)
+        string tempLine = line;
+        for (int i = 0; i < tempLine.size(); i++) if (tempLine[i] == ',') tempLine[i] = ' ';
+        stringstream ss(tempLine);
         string u;
         ss >> u;
-        if (u != currentUsername) {
-            newLines.push_back(line);
+
+        if (u != currentUsername && !u.empty()) {
+            newLines.push_back(line); // 保留其他人的 CSV 資料
         }
     }
 
-    // Step 3: 加入當前使用者的最新資料
+    // 加入當前使用者的最新 CSV 資料
     for (Character* c : userCharacters) {
         newLines.push_back(c->serialize());
     }
 
-    // Step 4: 寫回
+    // === 寫入檔案 ===
     ofstream file(filePath); // 覆蓋模式
+
+    // 1. 先寫入標題列 (CSV Header)
+    file << "帳號,角色名稱,職業,等級,HP,MaxHP,MP,MaxMP,力量,智慧,敏捷,幸運,剩餘點數,經驗值,金錢,武器,防具,背包數量,背包物品..." << endl;
+
+    // 2. 寫入資料
     for (string line : newLines) {
         file << line << endl;
     }
-    cout << "遊戲資料已存檔。\n";
+    cout << "遊戲資料已存檔 (CSV格式)。\n";
 }

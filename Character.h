@@ -230,18 +230,20 @@ public:
     // === 存檔與讀檔 ===
     virtual string serialize() {
         stringstream ss;
-        ss << username << " " << name << " " << job << " "
-            << level << " " << hp << " " << maxHp << " "
-            << mp << " " << maxMp << " "
-            << str << " " << wis << " " << agi << " " << luk << " " << statPoints << " "
-            << exp << " " << money;
+        // 數值之間用 "," 分隔
+        ss << username << "," << name << "," << job << ","
+            << level << "," << hp << "," << maxHp << ","
+            << mp << "," << maxMp << ","
+            << str << "," << wis << "," << agi << "," << luk << "," << statPoints << ","
+            << exp << "," << money;
 
-        ss << " " << (weaponSlot ? weaponSlot->getName() : "NONE");
-        ss << " " << (armorSlot ? armorSlot->getName() : "NONE");
+        // 裝備與背包也用逗號
+        ss << "," << (weaponSlot ? weaponSlot->getName() : "NONE");
+        ss << "," << (armorSlot ? armorSlot->getName() : "NONE");
 
-        ss << " " << inventory.size();
+        ss << "," << inventory.size();
         for (Item* item : inventory) {
-            ss << " " << item->getName();
+            ss << "," << item->getName();
         }
 
         return ss.str();
