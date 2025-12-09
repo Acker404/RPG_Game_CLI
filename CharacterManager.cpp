@@ -1,15 +1,15 @@
 #include "CharacterManager.h"
 #include <iostream>
-#include "Item.h"
+#include <filesystem>
+#include <direct.h> 
+#include "Item.h" // 引入 ItemFactory
+
 CharacterManager::CharacterManager() {
-    // 建構子
+    _mkdir("./data");
 }
 
 CharacterManager::~CharacterManager() {
-    // 釋放記憶體，避免 Memory Leak
-    for (auto c : userCharacters) {
-        delete c;
-    }
+    for (auto c : userCharacters) delete c;
     userCharacters.clear();
 }
 
@@ -24,7 +24,7 @@ vector<string> CharacterManager::readAllLines() {
 }
 
 void CharacterManager::loadUserCharacters(string username) {
-    // ... (清除舊資料的代碼保持不變) ...
+    // 清除舊資料
     for (auto c : userCharacters) delete c;
     userCharacters.clear();
 
@@ -32,31 +32,26 @@ void CharacterManager::loadUserCharacters(string username) {
     if (!file.is_open()) return;
 
     string line;
-    // === 修改讀取邏輯 ===
     while (getline(file, line)) {
         if (line.empty()) continue;
 
-        // 1. 跳過標題列 (如果開頭是 "帳號" 就跳過)
-        // 或者是檢查是否含有中文字標題
+        // 1. 跳過標題列
         if (line.find("帳號") == 0) continue;
 
-        // 2. CSV 解析技巧：把所有逗號 ',' 替換成空格 ' '
-        // 這樣我們原本的 stringstream >> 邏輯就完全不用改！
+        // 2. CSV 解析技巧：把逗號 ',' 替換成空格 ' '
         for (int i = 0; i < line.size(); i++) {
             if (line[i] == ',') line[i] = ' ';
         }
 
         stringstream ss(line);
-        // ... (以下原本的讀取邏輯完全不用動) ...
         string u, n, j;
         int lv, hp, mhp, mp, mmp, s, w, a, l, sp, e, mon;
 
+        // 讀取基礎數值
         ss >> u >> n >> j >> lv >> hp >> mhp >> mp >> mmp
             >> s >> w >> a >> l >> sp >> e >> mon;
 
-        // ... (後面判斷 username 與 new Character 的邏輯保持不變) ...
         if (u == username) {
-            // ... 記得保留你原本寫好的 setStats 等邏輯 ...
             Character* newChar = nullptr;
             if (j == "Warrior") newChar = new Warrior(u, n, lv);
             else if (j == "Mage") newChar = new Mage(u, n, lv);
@@ -65,8 +60,10 @@ void CharacterManager::loadUserCharacters(string username) {
                 newChar->setStats(hp, mhp, mp, mmp, s, w, a, l, sp, e);
                 newChar->setMoney(mon);
 
-                string weaponName, armorName;
-                ss >> weaponName >> armorName;
+                // 讀取裝備 (武器、防具、飾品)
+                string weaponName, armorName, accessoryName;
+                ss >> weaponName >> armorName >> accessoryName;
+
                 if (weaponName != "NONE") {
                     Item* item = createItemByName(weaponName);
                     Equipment* equip = dynamic_cast<Equipment*>(item);
@@ -77,7 +74,13 @@ void CharacterManager::loadUserCharacters(string username) {
                     Equipment* equip = dynamic_cast<Equipment*>(item);
                     if (equip) newChar->equipItem(equip);
                 }
+                if (accessoryName != "NONE") {
+                    Item* item = createItemByName(accessoryName);
+                    Equipment* equip = dynamic_cast<Equipment*>(item);
+                    if (equip) newChar->equipItem(equip);
+                }
 
+                // === 這裡是你之前漏掉的：讀取背包 ===
                 int invSize;
                 ss >> invSize;
                 for (int i = 0; i < invSize; i++) {
@@ -86,11 +89,14 @@ void CharacterManager::loadUserCharacters(string username) {
                     Item* item = createItemByName(itemName);
                     if (item) newChar->addItem(item);
                 }
+
+                // === 這裡是你之前漏掉的：加入列表 ===
                 userCharacters.push_back(newChar);
             }
         }
     }
 }
+
 void CharacterManager::createCharacter(string username) {
     loadUserCharacters(username);
     if (userCharacters.size() >= 3) {
@@ -102,11 +108,9 @@ void CharacterManager::createCharacter(string username) {
     cout << "\n=== 創建新角色 ===\n";
     cout << "請輸入角色名稱: "; cin >> name;
 
-    // 檢查名稱是否重複 (簡單檢查)
     for (auto c : userCharacters) {
         if (c->getName() == name) {
-            cout << "錯誤：角色名稱已存在！\n";
-            return;
+            cout << "錯誤：角色名稱已存在！\n"; return;
         }
     }
 
@@ -119,19 +123,18 @@ void CharacterManager::createCharacter(string username) {
     if (jobChoice == 1) newChar = new Warrior(username, name);
     else if (jobChoice == 2) newChar = new Mage(username, name);
     else {
-        cout << "無效的選擇。\n";
-        return;
+        cout << "無效的選擇。\n"; return;
     }
-    // === 修改寫入部分 ===
-    // 判斷檔案是否為空 (如果是新檔案，要先寫標題)
+
+    // 寫入檔案
     ifstream fCheck(filePath);
     bool isEmpty = (fCheck.peek() == ifstream::traits_type::eof());
     fCheck.close();
 
-    ofstream file(filePath, ios::app); // Append 模式
+    ofstream file(filePath, ios::app);
     if (file.is_open()) {
         if (isEmpty) {
-            file << "帳號,角色名稱,職業,等級,HP,MaxHP,MP,MaxMP,力量,智慧,敏捷,幸運,剩餘點數,經驗值,金錢,武器,防具,背包數量,背包物品..." << endl;
+            file << "帳號,角色名稱,職業,等級,HP,MaxHP,MP,MaxMP,力量,智慧,敏捷,幸運,剩餘點數,經驗值,金錢,武器,防具,飾品,背包數量,背包物品..." << endl;
         }
         file << newChar->serialize() << endl;
         cout << "角色 " << name << " 創建成功！\n";
@@ -139,13 +142,10 @@ void CharacterManager::createCharacter(string username) {
     delete newChar;
 }
 
-
-
 void CharacterManager::deleteCharacter(string username) {
     loadUserCharacters(username);
     if (userCharacters.empty()) {
-        cout << "無角色可刪除。\n";
-        return;
+        cout << "無角色可刪除。\n"; return;
     }
 
     cout << "\n=== 刪除角色 ===\n";
@@ -160,14 +160,18 @@ void CharacterManager::deleteCharacter(string username) {
     if (choice > 0 && choice <= userCharacters.size()) {
         string targetName = userCharacters[choice - 1]->getName();
 
-        // 讀取所有檔案內容，排除要刪除的那一行
         vector<string> allLines = readAllLines();
         ofstream file(filePath); // 覆寫模式
 
-        for (const string& line : allLines) {
-            stringstream ss(line);
+        for (string line : allLines) {
+            // === 修正：這裡也要處理 CSV 逗號才能比對帳號 ===
+            string tempLine = line;
+            for (int i = 0; i < tempLine.size(); i++) if (tempLine[i] == ',') tempLine[i] = ' ';
+
+            stringstream ss(tempLine);
             string u, n;
             ss >> u >> n;
+
             // 如果這行是當前使用者的角色，且名稱是要刪除的名稱，就跳過
             if (u == username && n == targetName) {
                 continue;
@@ -178,6 +182,41 @@ void CharacterManager::deleteCharacter(string username) {
     }
 }
 
+void CharacterManager::saveToFile() {
+    vector<string> allLines = readAllLines();
+    vector<string> newLines;
+
+    string currentUsername = "";
+    if (!userCharacters.empty()) currentUsername = userCharacters[0]->getUsername();
+
+    for (string line : allLines) {
+        if (line.find("帳號") == 0) continue;
+
+        string tempLine = line;
+        for (int i = 0; i < tempLine.size(); i++) if (tempLine[i] == ',') tempLine[i] = ' ';
+        stringstream ss(tempLine);
+        string u;
+        ss >> u;
+
+        if (u != currentUsername && !u.empty()) {
+            newLines.push_back(line);
+        }
+    }
+
+    for (Character* c : userCharacters) {
+        newLines.push_back(c->serialize());
+    }
+
+    ofstream file(filePath);
+    file << "帳號,角色名稱,職業,等級,HP,MaxHP,MP,MaxMP,力量,智慧,敏捷,幸運,剩餘點數,經驗值,金錢,武器,防具,飾品,背包數量,背包物品..." << endl;
+
+    for (string line : newLines) {
+        file << line << endl;
+    }
+    cout << "遊戲資料已存檔 (CSV格式)。\n";
+}
+
+// selectCharacterMenu 保持你原本的即可，不用動
 Character* CharacterManager::selectCharacterMenu(string username) {
     while (true) {
         loadUserCharacters(username);
@@ -192,7 +231,7 @@ Character* CharacterManager::selectCharacterMenu(string username) {
         else {
             for (int i = 0; i < userCharacters.size(); i++) {
                 cout << (i + 1) << ". ";
-                userCharacters[i]->showStats(); // 多型展示
+                userCharacters[i]->showStats();
             }
         }
 
@@ -212,20 +251,12 @@ Character* CharacterManager::selectCharacterMenu(string username) {
             deleteCharacter(username);
         }
         else if (input == "L" || input == "l") {
-            return nullptr; // 回傳 nullptr 表示登出
+            return nullptr;
         }
         else {
-            // 嘗試解析數字選擇
             try {
                 int index = stoi(input);
                 if (index > 0 && index <= userCharacters.size()) {
-                    // 重要：這裡我們複製一份被選中的角色回傳，或者直接回傳指標
-                    // 為了避免析構問題，我們這裡簡單回傳指標，
-                    // 但要小心 CharacterManager 解構時會 delete 這些指標。
-                    // 比較安全的作法是：被選中的角色，責任轉移給 GameEngine。
-
-                    // 這裡我們採用 Clone 概念，或者簡單地讓外部接管指標
-                    // 為求簡單，我們讓 Manager 保持擁有權，回傳指標僅供操作
                     cout << "已選擇角色: " << userCharacters[index - 1]->getName() << "\n";
                     return userCharacters[index - 1];
                 }
@@ -234,46 +265,4 @@ Character* CharacterManager::selectCharacterMenu(string username) {
             cout << "無效輸入。\n";
         }
     }
-}
-void CharacterManager::saveToFile() {
-    // ... (讀取舊資料、篩選非當前使用者的邏輯保持不變) ...
-    vector<string> allLines = readAllLines();
-    vector<string> newLines;
-
-    string currentUsername = "";
-    if (!userCharacters.empty()) currentUsername = userCharacters[0]->getUsername();
-
-    // 注意：讀取舊資料時，因為 allLines 是直接讀每一行
-    // 我們要過濾掉舊的標題列，以免重複寫入
-    for (string line : allLines) {
-        if (line.find("帳號") == 0) continue; // 跳過舊標題
-
-        // 解析這行是誰的 (需要先轉成空格處理才能讀 username)
-        string tempLine = line;
-        for (int i = 0; i < tempLine.size(); i++) if (tempLine[i] == ',') tempLine[i] = ' ';
-        stringstream ss(tempLine);
-        string u;
-        ss >> u;
-
-        if (u != currentUsername && !u.empty()) {
-            newLines.push_back(line); // 保留其他人的 CSV 資料
-        }
-    }
-
-    // 加入當前使用者的最新 CSV 資料
-    for (Character* c : userCharacters) {
-        newLines.push_back(c->serialize());
-    }
-
-    // === 寫入檔案 ===
-    ofstream file(filePath); // 覆蓋模式
-
-    // 1. 先寫入標題列 (CSV Header)
-    file << "帳號,角色名稱,職業,等級,HP,MaxHP,MP,MaxMP,力量,智慧,敏捷,幸運,剩餘點數,經驗值,金錢,武器,防具,背包數量,背包物品..." << endl;
-
-    // 2. 寫入資料
-    for (string line : newLines) {
-        file << line << endl;
-    }
-    cout << "遊戲資料已存檔 (CSV格式)。\n";
 }

@@ -23,21 +23,15 @@ bool Equipment::use(Character* user) {
 // Scroll 的實作
 bool Scroll::use(Character* user) {
     if (effectType == 2) { // 強化
-        Equipment* weapon = user->getWeapon();
-        if (weapon) {
-            weapon->enhance(); // 呼叫裝備的強化
-            cout << "你的武器發出了耀眼的光芒！\n";
-            return true;
-        }
-        else {
-            cout << "你手上沒有武器，無法強化！\n";
-            return false; // 沒用掉
-        }
+        // ... (原本的強化邏輯保持不變) ...
+        user->enhanceWeapon();
+        return true;
     }
     else if (effectType == 1) { // 傳送
-        // 傳送邏輯比較特殊，通常在外部處理，這裡只回傳 true 讓它消失
-        cout << "使用了回城卷軸！(若在戰鬥中則視為逃跑成功)\n";
-        return true;
+        // 設定旗標，告訴主程式該傳送了
+        user->setTeleportFlag(true);
+        cout << "使用了回城卷軸！空間開始扭曲...\n";
+        return true; // 消耗掉卷軸
     }
     return false;
 }

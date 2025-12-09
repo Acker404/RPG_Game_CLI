@@ -16,7 +16,7 @@ protected:
     int level;
     int exp;
     int money;
-
+    bool teleportFlag;
     // === 四大核心屬性 ===
     int str; // 力量 (影響 HP, 物攻)
     int wis; // 智慧 (影響 MP, 魔攻)
@@ -32,11 +32,12 @@ protected:
     vector<Item*> inventory;
     Equipment* weaponSlot;
     Equipment* armorSlot;
+    Equipment* accessorySlot;
 
 public:
     Character(string u, string n, string j, int lv)
         : username(u), name(n), job(j), level(lv), exp(0), money(100),
-        weaponSlot(nullptr), armorSlot(nullptr), statPoints(5) // <--- 改成 5
+        weaponSlot(nullptr), armorSlot(nullptr), accessorySlot(nullptr), statPoints(5) // <--- 改成 5
     {
         // 預設全屬性為 5
         str = wis = agi = luk = 5;
@@ -50,19 +51,34 @@ public:
         // 裝備部分如果是獨立物件也要考慮 delete，但在這個架構下裝備通常來自 ItemFactory 或 new，
         // 簡單起見由系統回收或這裡不處理指標 (避免 double free 如果它是從 inventory 移過來的)
     }
-
+    // === 套裝加成判斷 ===
+    bool isFullSet() const {
+        // 只有當三個部位都有裝備時，才回傳 true
+        return (weaponSlot != nullptr && armorSlot != nullptr && accessorySlot != nullptr);
+    }
+    // === 屬性 Getters (含加成邏輯) ===
+    // 所有的數值計算都應該透過這些 Getters，而不是直接讀取 str/wis 變數
+    int getEffectiveStat(int baseVal) const {
+        if (isFullSet()) {
+            return (int)(baseVal * 1.25); // 1.25 倍加成
+        }
+        return baseVal;
+    }
+    int getStr() const { return getEffectiveStat(str); }
+    int getWis() const { return getEffectiveStat(wis); }
+    int getAgi() const { return getEffectiveStat(agi); }
+    int getLuk() const { return getEffectiveStat(luk); }
     // === 核心：屬性計算公式 ===
     void updateDerivedStats() {
-        int calculatedMaxHp = (str * 10) + 50;
-        int calculatedMaxMp = (wis * 10) + 20;
-
+        // 使用 getStr() 而不是 str，這樣套裝加成會自動影響血量
+        int calculatedMaxHp = (getStr() * 10) + 50;
+        int calculatedMaxMp = (getWis() * 10) + 20;
         maxHp = calculatedMaxHp;
         maxMp = calculatedMaxMp;
 
         if (hp > maxHp) hp = maxHp;
         if (mp > maxMp) mp = maxMp;
     }
-
     // === 升級系統 ===
     void addExp(int amount) {
         exp += amount;
@@ -120,12 +136,8 @@ public:
     string getJob() const { return job; }
     int getHp() const { return hp; }
     int getMp() const { return mp; }
+	int getLevel() const { return level; }
     int getMoney() const { return money; }
-
-    int getStr() const { return str; }
-    int getWis() const { return wis; }
-    int getAgi() const { return agi; }
-    int getLuk() const { return luk; }
 
     // 計算總攻擊力 (基礎 + 裝備)
     int getTotalStr() const {
@@ -161,13 +173,11 @@ public:
     // 補回缺失的 showInventory
     void showInventory() {
         cout << "\n=== 背包 (金錢: " << money << ") ===\n";
-        cout << "裝備中武器: " << (weaponSlot ? weaponSlot->getName() : "無") << endl;
-        cout << "裝備中防具: " << (armorSlot ? armorSlot->getName() : "無") << endl;
+        cout << " [武器]: " << (weaponSlot ? weaponSlot->getName() : "無") << endl;
+        cout << " [防具]: " << (armorSlot ? armorSlot->getName() : "無") << endl;
+        cout << " [飾品]: " << (accessorySlot ? accessorySlot->getName() : "無") << endl; // <--- 顯示飾品
 
-        if (inventory.empty()) {
-            cout << "背包是空的。\n";
-            return;
-        }
+        if (inventory.empty()) { cout << "背包是空的。\n"; return; }
         for (int i = 0; i < inventory.size(); i++) {
             cout << (i + 1) << ". ";
             inventory[i]->showInfo();
@@ -194,7 +204,18 @@ public:
             }
         }
     }
-
+    // === 補回強化功能 (給強化卷軸用) ===
+    void enhanceWeapon() {
+        if (weaponSlot) {
+            weaponSlot->enhance();
+            cout << "武器 " << weaponSlot->getName() << " 發出了光芒！攻擊力提升了！\n";
+            // 強化後攻擊力變了，記得更新數值
+            updateDerivedStats();
+        }
+        else {
+            cout << "你手上沒有武器，卷軸失效了...\n";
+        }
+    }
     // === 裝備操作 ===
     Equipment* getWeapon() { return weaponSlot; }
 
@@ -205,10 +226,12 @@ public:
         if (equip->getSlot() == WEAPON) {
             oldEquip = weaponSlot;
             weaponSlot = equip;
-        }
-        else if (equip->getSlot() == ARMOR) {
+        }else if (equip->getSlot() == ARMOR) {
             oldEquip = armorSlot;
             armorSlot = equip;
+        }else if (equip->getSlot() == ACCESSORY) { // <--- 飾品邏輯
+            oldEquip = accessorySlot;
+            accessorySlot = equip;
         }
 
         if (oldEquip != nullptr) {
@@ -216,12 +239,21 @@ public:
             cout << "脫下了 " << oldEquip->getName() << "。\n";
         }
         cout << "裝備了 " << equip->getName() << "！\n";
+        
+        if (isFullSet()) {
+            cout << ">>> 套裝效果啟動！全屬性提升 1.25 倍！ <<<\n";
+        }
+
         updateDerivedStats(); // 重新計算數值
     }
 
     // 補回缺失的 useSkill
     virtual void useSkill() {
-        cout << "使用了技能！(基礎)" << endl;
+        cout << "使用了技能";
+        for(int i = 0;i< getLevel();i++){
+            cout << "*";
+		}
+        cout << endl;
     }
 
     // 純虛擬函式
@@ -240,6 +272,7 @@ public:
         // 裝備與背包也用逗號
         ss << "," << (weaponSlot ? weaponSlot->getName() : "NONE");
         ss << "," << (armorSlot ? armorSlot->getName() : "NONE");
+        ss << "," << (accessorySlot ? accessorySlot->getName() : "NONE"); // <--- 新增
 
         ss << "," << inventory.size();
         for (Item* item : inventory) {
@@ -254,6 +287,8 @@ public:
         str = s; wis = w; agi = a; luk = l; statPoints = sp;
         exp = e;
     }
+    void setTeleportFlag(bool val) { teleportFlag = val; }
+    bool getTeleportFlag() const { return teleportFlag; }
 };
 
 // === 職業定義 (確保建構子正確呼叫 updateDerivedStats) ===
@@ -270,8 +305,8 @@ public:
         cout << "\n=== 戰士狀態表 ===\n";
         cout << "名稱: " << name << " (Lv." << level << ")\n";
         cout << "HP: " << hp << "/" << maxHp << "  MP: " << mp << "/" << maxMp << "\n";
-        cout << "力量: " << str << "  智慧: " << wis << "\n";
-        cout << "敏捷: " << agi << "  幸運: " << luk << "\n";
+        cout << "力量: " << getStr() << "  智慧: " << getWis() << "\n";
+        cout << "敏捷: " << getAgi() << "  幸運: " << getLuk() << "\n";
         cout << "攻擊力: " << getTotalStr() << "  剩餘點數: " << statPoints << "\n";
         cout << "==================\n";
     }
@@ -290,8 +325,8 @@ public:
         cout << "\n=== 法師狀態表 ===\n";
         cout << "名稱: " << name << " (Lv." << level << ")\n";
         cout << "HP: " << hp << "/" << maxHp << "  MP: " << mp << "/" << maxMp << "\n";
-        cout << "力量: " << str << "  智慧: " << wis << "\n";
-        cout << "敏捷: " << agi << "  幸運: " << luk << "\n";
+        cout << "力量: " << getStr() << "  智慧: " << getWis() << "\n";
+        cout << "敏捷: " << getAgi() << "  幸運: " << getLuk() << "\n";
         cout << "攻擊力: " << getTotalStr() << "  剩餘點數: " << statPoints << "\n";
         cout << "==================\n";
     }

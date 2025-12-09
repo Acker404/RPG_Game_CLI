@@ -67,7 +67,7 @@ void BattleSystem::playerTurn(Character* player, Monster& monster, bool& escaped
             // 戰士技能：強力一擊 (消耗 MP 10)
             if (player->getMp() >= 10) {
                 player->useSkill(); // 顯示技能文字
-                damage = player->getTotalStr() + (rand() % 5) * 2; // 兩倍傷害
+                damage = player->getTotalStr() + (rand() % 5) * 2 * (1+player->getLevel()/10); // 兩倍傷害
                 player->consumeMp(10);
                 monster.takeDamage(damage);
                 cout << ">>> 造成了 " << damage << " 點暴擊傷害！\n";
@@ -83,7 +83,7 @@ void BattleSystem::playerTurn(Character* player, Monster& monster, bool& escaped
             // 法師技能：火球術 (消耗 MP 20)
             if (player->getMp() >= 20) {
                 player->useSkill();
-                damage = player->getWis() * 3; // 智力3倍傷害
+                damage = player->getWis() * 3 * (1 + player->getLevel() / 10); // 智力3倍傷害
                 player->consumeMp(20);
                 monster.takeDamage(damage);
                 cout << ">>> 造成了 " << damage << " 點魔法傷害！\n";

@@ -47,7 +47,7 @@ void shopMenu(Character* player) {
         int choice;
         cin >> choice;
 
-        if (choice == 6) break;
+        if (choice == 0) break;
 
         Item* newItem = nullptr;
 
@@ -59,16 +59,16 @@ void shopMenu(Character* player) {
             if (player->spendMoney(30)) newItem = new Consumable("小藍藥水", 30, 30, true);
             break;
         case 3:
-            if (player->spendMoney(100)) newItem = new Equipment("鐵劍", 80, WEAPON, 10);
+            if (player->spendMoney(80)) newItem = new Equipment("鐵劍", 80, WEAPON, 10);
             break;
         case 4:
-            if (player->spendMoney(100)) newItem = new Equipment("法杖", 80, WEAPON, 10);
+            if (player->spendMoney(80)) newItem = new Equipment("法杖", 80, WEAPON, 10);
             break; 
         case 5:
-                if (player->spendMoney(100)) newItem = new Equipment("戒指", 30, ACCESSORY, 5);
-                break;
+            if (player->spendMoney(30)) newItem = new Equipment("戒指", 30, ACCESSORY, 5);
+            break;
         case 6:
-            if (player->spendMoney(100)) newItem = new Equipment("衣服", 50, ARMOR, 5);
+            if (player->spendMoney(50)) newItem = new Equipment("衣服", 50, ARMOR, 5);
             break;
         case 7:
             if (player->spendMoney(50)) newItem = new Scroll("強化卷軸", 50, 2);
@@ -83,7 +83,7 @@ void shopMenu(Character* player) {
             cout << "購買成功！\n";
             system("pause");
         }
-        else if (choice >= 1 && choice <= 3) {
+        else if (choice >= 1 && choice <= 8) {
             cout << "金錢不足！\n";
             system("pause");
         }
@@ -143,6 +143,18 @@ void runGameLoop(Character* player, MapSystem& mapSys) {
                 else {
                     currentMonsters = generateMonstersForLocation(type);
                 }
+                if (rand() % 100 < 20) {
+                    int healHp = 10; // 回復量
+                    int healMp = 5;
+
+                    // 只有當受傷時才顯示訊息，避免洗版
+                    if (player->getHp() < 500 || player->getMp() < 200) { // 這裡數值只是大概，recover 會自動判斷上限
+                        player->recover(healHp, healMp);
+                        cout << "\n>>> [旅途休息] 邊走邊調整呼吸，氣色好多了 (HP+" << healHp << ", MP+" << healMp << ") <<<\n";
+                        // 稍微暫停讓玩家看到 (可選)
+                        // system("pause"); 
+                    }
+                }
             }
             else {
                 cout << "無法移動！\n";
@@ -182,6 +194,17 @@ void runGameLoop(Character* player, MapSystem& mapSys) {
         else if (key == 'b' || key == 'B') {
             // (商店邏輯保持不變...)
             if (mapSys.getCurrentNodeType() == SHOP) shopMenu(player);
+        }
+        // === 檢查傳送旗標 ===
+        if (player->getTeleportFlag()) {
+            // 呼叫地圖系統的傳送功能
+            mapSys.teleportToTown();
+
+            // 記得把旗標關掉，不然會一直傳送
+            player->setTeleportFlag(false);
+
+            cout << ">>> 咻！你被傳送回到了城鎮中心。 <<<\n";
+            system("pause"); // 讓玩家看到訊息
         }
 		Sleep(100); // 小延遲，避免過快迴圈
     }
